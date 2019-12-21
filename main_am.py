@@ -2,7 +2,7 @@ import sys
 import os
 import tensorflow as tf
 from model_acoustic import cnn_ctc, transformer_am, DNN, cnn_ctc_test
-from data_helper import data_helper
+from data_helper import data_helper_am
 from os.path import abspath, join, dirname
 import importlib
 
@@ -11,7 +11,7 @@ gpus = tf.config.experimental.list_physical_devices(device_type="GPU")
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 config = importlib.import_module((sys.argv[1]))
-data_obj = data_helper.DataSpeech(data_root=config.data_root,
+data_obj = data_helper_am.DataSpeech(data_root=config.data_root,
                                   mode=config.mode,
                                   specified_datasets=config.specified_datasets,
                                   batch_size=config.batch_size,
