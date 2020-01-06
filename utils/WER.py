@@ -1,8 +1,50 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/env python
-
-import sys
 import numpy
+import tensorflow as tf
+
+def wer(logits, input_length_decode, label_tensor):
+
+    decoded_pinyin_id = tf.keras.backend.ctc_decode(y_pred=logits,
+                                                    input_length=input_length_decode,
+                                                    greedy=False,
+                                                    beam_width=100,
+                                                    top_paths=1
+                                                    )
+    wer = 0
+    wer_actual = 0
+    label_tensor_numpy = label_tensor.numpy()
+    decoded_pinyin_id_numpy = decoded_pinyin_id[0][0].numpy()
+    for i in range(label_tensor_numpy.shape[0]):
+        edit_distance = minDistance(label_tensor_numpy[i], decoded_pinyin_id_numpy[i])
+        wer += min(len(label_tensor_numpy[i]), edit_distance)
+        wer_actual += edit_distance
+    wer /= label_tensor_numpy.size
+    wer_actual /= label_tensor_numpy.size
+    return wer, wer_actual
+
+
+def minDistance(s1, s2):
+    """
+    :type s1: sentence
+    :type s2: sentence
+    :rtype: int
+    """
+    dp = [[0 for _ in range(len(s2) + 1)] for _ in range(len(s1) + 1)]
+    for i in range(len(s2) + 1):
+        dp[0][i] = i
+    for i in range(len(s1) + 1):
+        dp[i][0] = i
+    for i in range(1, len(s1) + 1):
+        for j in range(1, len(s2) + 1):
+            if s1[i - 1] == s2[j - 1]:
+                dp[i][j] = min(dp[i - 1][j - 1], min(dp[i - 1][j], dp[i][j - 1]) + 1)
+            else:
+                dp[i][j] = min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]) + 1
+    return dp[-1][-1]
+
+
+
 
 
 def editDistance(r, h):
@@ -181,7 +223,7 @@ def alignedPrint(list, r, h, result):
     print("WER: " + result)
 
 
-def wer(r, h):
+def wer2(r, h):
     """
     This is a function that calculate the word error rate in ASR.
     You can use it like this: wer("what is it".split(), "what is".split())
@@ -198,33 +240,8 @@ def wer(r, h):
     alignedPrint(list, r, h, result)
     return result
 
-
 if __name__ == '__main__':
-    # filename1 = sys.argv[1]
-    # filename2 = sys.argv[2]
-    filename1 = open('text1.txt')
-    filename2 = open('text2.txt')
-
-    '''
-    If your test file is plain English text, use the split function as follows to segment the word, 
-    then call the wer function to perform the WER test.
-    '''
-    # r = filename1.read().split()
-    # h = filename2.read().split()
-
-    '''
-    If your test file is Chinese text, use the following code to convert the text to a 
-    single-character representation, then call the wer function to perform the WER test.
-    '''
-    r = filename1.read()
-    r_list = []
-    for s in r:
-        r_list.append(s)
-
-    h = filename2.read()
-    h_list = []
-    for s in h:
-        h_list.append(s)
-
-    # wer test
-    wer(r_list, h_list)
+    s1 = ['a', 'b', 'c']
+    s2 = ['a', 'b', 'd']
+    min_Dis = minDistance(s1, s2)
+    print(min_Dis)
